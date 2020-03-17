@@ -23,7 +23,6 @@
                 		hu.mta.sztaki.lpds.cloud.simulator
                 	</groupId>
                 	<artifactId>DistSysJavaHelpers</artifactId>
-                	<version>1.0.2-SNAPSHOT</version>
                 </dependency>
 	</dependencies>
 	<inceptionYear>2012</inceptionYear>
@@ -73,4 +72,13 @@
 			</resource>
 		</resources>
 	</build>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>hu.mta.sztaki.lpds.cloud.simulator</groupId>
+				<artifactId>DistSysJavaHelpers</artifactId>
+				<version>1.0.2-SNAPSHOT</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>
