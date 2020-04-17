@@ -9,20 +9,18 @@ import hu.mta.sztaki.lpds.cloud.simulator.iaas.VirtualMachine;
 import uk.ac.ljmu.fet.cs.cloud.examples.autoscaler.*;
 
 public class CustomVMAutoScaler extends VirtualInfrastructure {
-
-	private String applicationName = "";
 	/*
 	 * Minimum CPU utilisation as a percentage of a single virtual machine
 	 * that we still want to keep in the virtual infrastructure. In this case
-	 * I have set the value to 5%.
+	 * I have set the value to 20%.
 	 */
-	public static final double minUtil = .05;
+	public static final double minUtil = .2;
 	/*
 	 * Maximum CPU utilisation as a percentage of ALL virtual machines of the 
 	 * same kind of executable. Under this value no new VM will be needed. 
 	 * In this case I have set the value to 70% to allow for some overhead.
 	 */
-	public static final double maxUtil = .7;
+	public static final double maxUtil = .70;
 	/*
 	 * This data structure will keep track of how many times the last VM was not used.
 	 */
@@ -36,12 +34,12 @@ public class CustomVMAutoScaler extends VirtualInfrastructure {
 		 * My auto scaling algorithm for the course work.
 		 * ----------------------------------------------
 		 * The logic for this algorithm:
-		 * Parameters for minimum CPU utilisation and maximum utilisation are set at 5% and 70% respectively.
+		 * Parameters for minimum CPU utilisation and maximum utilisation are set at 20% and 70% respectively.
 		 * 
-		 * If CPU utilisation of a singular virtual machine falls below minimum (5%), destroy the VM unless it is the last one. 
+		 * If CPU utilisation of a singular virtual machine falls below minimum (20%), destroy the VM unless it is the last one. 
 		 * This is to allow keep one of each virtual machine kind in case new jobs come in. If this last virtual machine does
-		 * not receive a job within 5 simulated minutes, then remove this virtual machine. This is to reduce costs on a pay per
-		 * minute billing. 
+		 * not receive a job within 58 minutes simulated minutes, then remove this virtual machine. The value of 58 minutes was 
+		 * used to check the virtual machine before the hour is up, not to incur more cost for another hour on a pay-per-hour billing.
 		 * 
 		 * If average CPU utilisation of all virtual machines is more than the maximum utilisation threshold (70%) then scale up
 		 * and create a new virtual machine of the same kind of virtual machine.
@@ -51,10 +49,6 @@ public class CustomVMAutoScaler extends VirtualInfrastructure {
 
 	@Override
 	public void tick(long fires) {		
-
-		if(applicationName.equals("")) {
-
-
 			final Iterator<String> kinds = vmSetPerKind.keySet().iterator();
 			while(kinds.hasNext()) {
 				final String kind = kinds.next();
@@ -64,53 +58,52 @@ public class CustomVMAutoScaler extends VirtualInfrastructure {
 				if(vmset.isEmpty()) {
 
 					requestVM(kind);
-
-					//Remember application
-					applicationName = kind;
-					//System.out.println(applicationName);
+					
 					continue;
 				} else if (vmset.size() == 1) {
-					final VirtualMachine onlyMachine = vmset.get(0);
+					final VirtualMachine soleMachine = vmset.get(0);
 					// check not to destroy last virtual machine of a kind
-					if (onlyMachine.underProcessing.isEmpty() && onlyMachine.toBeAdded.isEmpty() ) {
-						Integer k = unusedVMMap.get(onlyMachine);
+					if (soleMachine.underProcessing.isEmpty() && soleMachine.toBeAdded.isEmpty() ) {
+						Integer k = unusedVMMap.get(soleMachine);
 						if (k == null) {
-							unusedVMMap.put(onlyMachine, 1);
+							unusedVMMap.put(soleMachine, 1);
 						} else {
 							k++;
-							//check up to 5 tics (10 min)
-							if (k < 5) {
-								unusedVMMap.put(onlyMachine, k);
+							//check up to 29 ticks (58 min)
+							if (k < 29) {
+								unusedVMMap.put(soleMachine, k);
 							} else {
-								// if VM is unused for 10 minutes, we destory the VM
-								unusedVMMap.remove(onlyMachine);
-								destroyVM(onlyMachine);
-								kinds.remove();
+								//if ()
+								// if VM is unused for 58 minutes, we destory the VM
+								unusedVMMap.remove(soleMachine);
+								destroyVM(soleMachine);
 							}
 						}
+						// continue to next block of code, no more VM's needed as there is 0 processing going on
 						continue;
 					}
-					unusedVMMap.remove(onlyMachine);
+					unusedVMMap.remove(soleMachine);
 					// now to check if we need to scale up the number of VM's
 				} else {
-					boolean destroyed = false;
-					for (int i = 0; i < vmset.size(); i++) {
-						final VirtualMachine vm = vmset.get(i);
+					boolean isDestroyed = false;
+					for (int j = 0; j < vmset.size(); j++) {
+						final VirtualMachine vm = vmset.get(j);
 						if (vm.underProcessing.isEmpty() && vm.toBeAdded.isEmpty()) {
 							// VM not currently processing anything and therefore not being used
 							if(getHourlyUtilisationPercForVM(vm) < minUtil) {
-								//VM load is under 5% in the last hour, we remove this now.
+								//VM load is under 20% in the last hour, we remove this now.
 								destroyVM(vm);
-								destroyed = true;
-								i--;
+								isDestroyed = true;
+								j--;
 							}
 						}
 					}
-					if (destroyed == true) {
+					if (isDestroyed == true) {
 						//no need to do anything if VM is destroyed.
 						continue;
 					}
 				}
+				// scale up logic, check if we need more vm's than we current have in the pool
 				double intermittentUtilCalc = 0;
 				for (VirtualMachine vm : vmset) {
 					intermittentUtilCalc += getHourlyUtilisationPercForVM(vm);
@@ -119,6 +112,6 @@ public class CustomVMAutoScaler extends VirtualInfrastructure {
 					requestVM(kind);
 				}
 			}
-		}
+			startAutoScaling();
 	}
 }
