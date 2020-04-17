@@ -38,12 +38,13 @@ public class CustomVMAutoScaler extends VirtualInfrastructure {
 		 * The logic for this algorithm:
 		 * Parameters for minimum CPU utilisation and maximum utilisation are set at 5% and 70% respectively.
 		 * 
-		 * If CPU utilisation of a singular virtual machine falls below minumum (5%), destroy the VM unless it is the last one. 
+		 * If CPU utilisation of a singular virtual machine falls below minimum (5%), destroy the VM unless it is the last one. 
 		 * This is to allow keep one of each virtual machine kind in case new jobs come in. If this last virtual machine does
 		 * not receive a job within 5 simulated minutes, then remove this virtual machine. This is to reduce costs on a pay per
 		 * minute billing. 
 		 * 
-		 * If CPU utilisation for the total
+		 * If average CPU utilisation of all virtual machines is more than the maximum utilisation threshold (70%) then scale up
+		 * and create a new virtual machine of the same kind of virtual machine.
 		 * 
 		 */
 	}
@@ -121,48 +122,3 @@ public class CustomVMAutoScaler extends VirtualInfrastructure {
 		}
 	}
 }
-
-//				}else {
-//
-//					final ArrayList<VirtualMachine> inList = new ArrayList<VirtualMachine>();
-//					final ArrayList<VirtualMachine> custList = new ArrayList<VirtualMachine>();
-//					double preHourUtil = 0;
-//					for (VirtualMachine vm : vmset) {
-//						double currentUtilVM = getHourlyUtilisationPercForVM(vm);
-//						if (currentUtilVM > ThresholdBasedVI.minUtilisationLevelBeforeDestruction && vm.getState() == VirtualMachine.State.RUNNING && vm.underProcessing.isEmpty() && vm.toBeAdded.isEmpty()) {
-//							custList.add(vm);
-//						}
-//						preHourUtil += currentUtilVM;
-//						
-//						if(vm.getState() == VirtualMachine.State.RUNNING) {
-//							if(vm.underProcessing.isEmpty() && vm.toBeAdded.isEmpty()) {
-//								inList.add(vm);
-//							}
-//						}else {
-//
-//						}
-//
-//					}
-//
-//					if(!inList.isEmpty()) {
-//						for(VirtualMachine vm : inList) {
-//							destroyVM(vm);
-//						}
-//					}
-//
-//				}
-//
-//				//removed first non-checkedVI
-//
-//
-//
-//			}
-//		}else{
-//			final ArrayList<VirtualMachine> vmset = vmSetPerKind.get(applicationName);
-//			requestVM(applicationName);
-//			if(vmset.size() >= 3) {
-//				applicationName = "";
-//			}
-//		}
-//	}
-//}
